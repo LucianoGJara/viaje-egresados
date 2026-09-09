@@ -17,7 +17,7 @@
  */
 
 window.APP_CONFIG = {
-  SUPABASE_URL: 'https://aqlfvqrfghrsmlyugnsp.supabase.co/rest/v1/',
+  SUPABASE_URL: 'https://aqlfvqrfghrsmlyugnsp.supabase.co',
   SUPABASE_ANON_KEY: 'sb_publishable_jF5x3DRS9wJHFdL7w55XHA_srAUQmsL',
 
   // Nombre que se usa mientras la app carga la configuración real desde Supabase.
