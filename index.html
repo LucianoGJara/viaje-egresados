@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+<title>Viaje de Egresados · Control de recaudación</title>
+<meta name="description" content="Administrá ventas, ganancias, ingresos extras y el ahorro para el viaje de egresados.">
+
+<!-- PWA -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#4F46E5">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Viaje Egresados">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/icon-72.png">
+
+<!-- Tipografía -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <!-- Pantalla de carga inicial -->
+  <div class="loading-overlay" id="loading-overlay">
+    <div class="spinner"></div>
+    <p class="loading-overlay__text" id="loading-text">Cargando campaña...</p>
+  </div>
+
+  <div class="app" id="app" hidden>
+
+    <!-- ============ TOPBAR ============ -->
+    <header class="topbar">
+      <div class="topbar__brand">
+        <div class="topbar__logo" id="app-logo">🎓</div>
+        <div class="topbar__titles">
+          <div class="topbar__title" id="app-title">Viaje de Egresados</div>
+          <div class="topbar__subtitle" id="app-subtitle">Control de recaudación para el viaje</div>
+        </div>
+      </div>
+      <div class="topbar__actions">
+        <button class="btn btn--icon btn--ghost" id="btn-refresh" title="Actualizar" aria-label="Actualizar">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <div class="app-body">
+      <!-- ============ SIDEBAR (desktop) ============ -->
+      <aside class="sidebar" id="sidebar">
+        <button class="sidebar__item" data-nav="inicio">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+          Inicio
+        </button>
+        <button class="sidebar__item" data-nav="nueva-venta">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+          Nueva venta
+        </button>
+        <button class="sidebar__item" data-nav="ventas">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h18v4H3z"/><path d="M5 7v13a1 1 0 001 1h12a1 1 0 001-1V7"/><line x1="9" y1="12" x2="15" y2="12"/></svg>
+          Ventas
+        </button>
+        <button class="sidebar__item" data-nav="productos">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41L13.42 20.58a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+          Productos
+        </button>
+        <button class="sidebar__item" data-nav="ingresos">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+          Ingresos extras
+        </button>
+
+        <div class="sidebar__section-label">Análisis</div>
+        <button class="sidebar__item" data-nav="estadisticas">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+          Estadísticas
+        </button>
+        <button class="sidebar__item" data-nav="meta">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+          Meta del viaje
+        </button>
+
+        <div class="sidebar__section-label">Más</div>
+        <button class="sidebar__item" data-nav="compartir">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+          Compartir campaña
+        </button>
+        <button class="sidebar__item" data-nav="configuracion">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06A1.65 1.65 0 004.6 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06A1.65 1.65 0 009 4.6a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06A1.65 1.65 0 0019.4 9c.14.3.22.63.22.97"/></svg>
+          Configuración
+        </button>
+      </aside>
+
+      <!-- ============ CONTENIDO PRINCIPAL ============ -->
+      <main class="main" id="main">
+        <div id="global-error-container"></div>
+
+        <section class="screen" id="screen-inicio"><div id="root-inicio"></div></section>
+        <section class="screen" id="screen-nueva-venta"><div id="root-nueva-venta"></div></section>
+        <section class="screen" id="screen-ventas"><div id="root-ventas"></div></section>
+        <section class="screen" id="screen-productos"><div id="root-productos"></div></section>
+        <section class="screen" id="screen-ingresos"><div id="root-ingresos"></div></section>
+        <section class="screen" id="screen-estadisticas"><div id="root-estadisticas"></div></section>
+        <section class="screen" id="screen-meta"><div id="root-meta"></div></section>
+        <section class="screen" id="screen-compartir"><div id="root-compartir"></div></section>
+        <section class="screen" id="screen-configuracion"><div id="root-configuracion"></div></section>
+      </main>
+    </div>
+
+    <!-- ============ FAB (mobile) ============ -->
+    <button class="fab" id="fab-nueva-venta" aria-label="Nueva venta">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    </button>
+
+    <!-- ============ BOTTOM NAV (mobile) ============ -->
+    <nav class="bottom-nav" id="bottom-nav">
+      <button class="nav-item" data-nav="inicio">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        <span>Inicio</span>
+      </button>
+      <button class="nav-item" data-nav="ventas">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h18v4H3z"/><path d="M5 7v13a1 1 0 001 1h12a1 1 0 001-1V7"/><line x1="9" y1="12" x2="15" y2="12"/></svg>
+        <span>Ventas</span>
+      </button>
+      <button class="nav-item nav-item--fab" data-nav="nueva-venta">
+        <span class="nav-item__fab-circle">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </span>
+        <span>Vender</span>
+      </button>
+      <button class="nav-item" data-nav="estadisticas">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        <span>Stats</span>
+      </button>
+      <button class="nav-item" id="btn-open-more">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
+        <span>Más</span>
+      </button>
+    </nav>
+
+    <!-- ============ SHEET "MÁS" (mobile) ============ -->
+    <div class="sheet-overlay" id="more-sheet-overlay">
+      <div class="sheet">
+        <div class="sheet__handle"></div>
+        <div class="sheet__title">Más opciones</div>
+        <div class="sheet-grid">
+          <div class="sheet-link" data-nav="productos">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41L13.42 20.58a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+            Productos
+          </div>
+          <div class="sheet-link" data-nav="ingresos">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+            Ingresos extras
+          </div>
+          <div class="sheet-link" data-nav="meta">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+            Meta del viaje
+          </div>
+          <div class="sheet-link" data-nav="compartir">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+            Compartir
+          </div>
+          <div class="sheet-link" data-nav="configuracion">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06A1.65 1.65 0 004.6 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06A1.65 1.65 0 009 4.6a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06A1.65 1.65 0 0019.4 9c.14.3.22.63.22.97"/></svg>
+            Configuración
+          </div>
+          <div class="sheet-link" data-nav="inicio">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            Inicio
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ MODAL GENÉRICO (detalle / edición) ============ -->
+  <div class="modal-overlay" id="modal-overlay">
+    <div class="modal">
+      <div class="modal__handle"></div>
+      <div class="modal__header">
+        <div class="modal__title" id="modal-title">Título</div>
+        <button class="modal__close" id="modal-close" aria-label="Cerrar">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div id="modal-body"></div>
+    </div>
+  </div>
+
+  <!-- ============ CONFIRMACIÓN ============ -->
+  <div class="modal-overlay" id="confirm-overlay">
+    <div class="modal">
+      <p style="font-size:15px;font-weight:700;margin-bottom:4px;">¿Estás seguro?</p>
+      <p id="confirm-message" class="text-secondary" style="font-size:13.5px;"></p>
+      <div class="modal__footer">
+        <button class="btn btn--ghost" id="confirm-cancel">Cancelar</button>
+        <button class="btn btn--danger" id="confirm-ok">Confirmar</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast-container"></div>
+
+  <!-- ============ LIBRERÍAS ============ -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+
+  <!-- ============ APP ============ -->
+  <script src="js/config.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/stats.js"></script>
+  <script src="js/charts.js"></script>
+  <script src="js/screens/inicio.js"></script>
+  <script src="js/screens/nueva-venta.js"></script>
+  <script src="js/screens/ventas.js"></script>
+  <script src="js/screens/productos.js"></script>
+  <script src="js/screens/ingresos.js"></script>
+  <script src="js/screens/estadisticas.js"></script>
+  <script src="js/screens/meta.js"></script>
+  <script src="js/screens/compartir.js"></script>
+  <script src="js/screens/configuracion.js"></script>
+  <script src="js/router.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,22 @@
+# Sistema
+.DS_Store
+Thumbs.db
+
+# Editores
+.vscode/
+.idea/
+
+# Node (por si se usa alguna herramienta local, ej. servidor de desarrollo)
+node_modules/
+npm-debug.log*
+
+# Vercel
+.vercel
+
+# Backups locales exportados desde la app
+/backups/
+*.local.json
+
+# Variables de entorno (si en el futuro se usa un paso de build)
+.env
+.env.local
