@@ -8,7 +8,7 @@
  * "Importar JSON" y "Restaurar respaldo".
  */
 
-const ScreenConfiguracion = (() => {
+window.ScreenConfiguracion = (() => {
   const COLOR_PRESETS = ['#4F46E5', '#7C3AED', '#2563EB', '#0EA5E9', '#10B981', '#F59E0B', '#EF4444', '#EC4899'];
   const loadedScripts = new Set();
 
