@@ -3,7 +3,7 @@
  * de ganancia y rentabilidad, y precio↔porcentaje bidireccional.
  */
 
-const ScreenProductos = (() => {
+window.ScreenProductos = (() => {
   function productCardHtml(p) {
     return `
       <div class="product-card ${p.activo ? '' : 'is-inactive'}" data-id="${p.id}">
