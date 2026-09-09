@@ -2,7 +2,7 @@
  * screens/meta.js — Meta del viaje + proyección de unidades a vender.
  */
 
-const ScreenMeta = (() => {
+window.ScreenMeta = (() => {
   function proyeccionCardHtml(item) {
     return `
       <div class="card">
