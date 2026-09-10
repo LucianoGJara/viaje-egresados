@@ -6,7 +6,7 @@
  *    porque los datos deben persistir en la nube y estar siempre actualizados.
  */
 
-const CACHE_VERSION = 'viaje-egresados-v1';
+const CACHE_VERSION = 'viaje-egresados-v2';
 const APP_SHELL = [
   '/',
   '/index.html',
@@ -24,6 +24,7 @@ const APP_SHELL = [
   '/js/screens/nueva-venta.js',
   '/js/screens/ventas.js',
   '/js/screens/productos.js',
+  '/js/screens/insumos.js',
   '/js/screens/ingresos.js',
   '/js/screens/estadisticas.js',
   '/js/screens/meta.js',
