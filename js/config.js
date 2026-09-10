@@ -17,8 +17,8 @@
  */
 
 window.APP_CONFIG = {
-  SUPABASE_URL: 'https://TU-PROYECTO.supabase.co',
-  SUPABASE_ANON_KEY: 'TU-ANON-KEY-AQUI',
+  SUPABASE_URL: 'https://aqlfvqrfghrsmlyugnsp.supabase.co',
+  SUPABASE_ANON_KEY: 'sb_publishable_jF5x3DRS9wJHFdL7w55XHA_srAUQmsL',
 
   // Nombre que se usa mientras la app carga la configuración real desde Supabase.
   APP_NAME_FALLBACK: 'Viaje de Egresados',
