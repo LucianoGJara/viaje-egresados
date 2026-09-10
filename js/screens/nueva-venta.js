@@ -2,7 +2,7 @@
  * screens/nueva-venta.js — Registrar una venta nueva.
  */
 
-window.ScreenNuevaVenta = (() => {
+const ScreenNuevaVenta = (() => {
   let productos = [];
   let estado = 'pendiente';
 
@@ -211,3 +211,5 @@ window.ScreenNuevaVenta = (() => {
 
   return { render };
 })();
+
+window.ScreenNuevaVenta = ScreenNuevaVenta;

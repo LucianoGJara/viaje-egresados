@@ -115,7 +115,108 @@ const Api = (() => {
       activo: original.activo,
       orden: original.orden
     };
-    return createProducto(copia);
+    const nuevo = await createProducto(copia);
+    // La receta (insumos) también se duplica, así no hay que volver a cargarla a mano.
+    const receta = await getRecetaProducto(id);
+    if (receta.length) {
+      await setRecetaProducto(nuevo.id, receta.map((r) => ({ insumo_id: r.insumo_id, cantidad: r.cantidad })));
+    }
+    return nuevo;
+  }
+
+  // -------------------------------------------------------------------
+  // INSUMOS (catálogo de materia prima / ingredientes)
+  // -------------------------------------------------------------------
+  async function listInsumos({ includeInactive = true } = {}) {
+    let q = sb.from('insumos').select('*').eq('campana_id', campanaId).order('orden', { ascending: true });
+    if (!includeInactive) q = q.eq('activo', true);
+    const { data, error } = await q;
+    throwIfError(error);
+    return data || [];
+  }
+
+  async function getInsumo(id) {
+    const { data, error } = await sb.from('insumos').select('*').eq('id', id).single();
+    throwIfError(error);
+    return data;
+  }
+
+  async function createInsumo(payload) {
+    const { data, error } = await sb
+      .from('insumos')
+      .insert({ ...payload, campana_id: campanaId })
+      .select()
+      .single();
+    throwIfError(error);
+    return data;
+  }
+
+  async function updateInsumo(id, payload) {
+    const { data, error } = await sb
+      .from('insumos')
+      .update({ ...payload, updated_at: new Date().toISOString() })
+      .eq('id', id)
+      .select()
+      .single();
+    throwIfError(error);
+    return data;
+  }
+
+  async function deleteInsumo(id) {
+    // Al borrar un insumo, ON DELETE CASCADE también borra sus filas en
+    // producto_insumos (deja de aparecer en la receta de los combos que lo usaban).
+    const { error } = await sb.from('insumos').delete().eq('id', id);
+    throwIfError(error);
+  }
+
+  async function duplicarInsumo(id) {
+    const original = await getInsumo(id);
+    return createInsumo({
+      nombre: `${original.nombre} (copia)`,
+      unidad_medida: original.unidad_medida,
+      notas: original.notas,
+      activo: original.activo,
+      orden: original.orden
+    });
+  }
+
+  // -------------------------------------------------------------------
+  // RECETAS (producto_insumos): qué insumos y en qué cantidad usa cada combo
+  // -------------------------------------------------------------------
+  async function getRecetaProducto(productoId) {
+    const { data, error } = await sb
+      .from('producto_insumos')
+      .select('*, insumo:insumos(*)')
+      .eq('producto_id', productoId)
+      .order('created_at', { ascending: true });
+    throwIfError(error);
+    return data || [];
+  }
+
+  // Trae de una sola vez la receta de TODOS los productos indicados (para no
+  // hacer N consultas al calcular "insumos necesarios" sobre todas las ventas).
+  async function getRecetas(productoIds = []) {
+    if (!productoIds.length) return [];
+    const { data, error } = await sb
+      .from('producto_insumos')
+      .select('*, insumo:insumos(*)')
+      .in('producto_id', productoIds);
+    throwIfError(error);
+    return data || [];
+  }
+
+  // Reemplaza toda la receta de un producto de una sola vez (borra + inserta).
+  async function setRecetaProducto(productoId, items = []) {
+    const { error: errDelete } = await sb.from('producto_insumos').delete().eq('producto_id', productoId);
+    throwIfError(errDelete);
+    if (!items.length) return [];
+    const rows = items
+      .filter((it) => it.insumo_id && Number(it.cantidad) > 0)
+      .map((it) => ({ producto_id: productoId, insumo_id: it.insumo_id, cantidad: Number(it.cantidad) }));
+    if (!rows.length) return [];
+    const { data, error } = await sb.from('producto_insumos').insert(rows).select();
+    throwIfError(error);
+    return data;
   }
 
   // -------------------------------------------------------------------
@@ -310,14 +411,17 @@ const Api = (() => {
   // RESPALDO / RESTAURAR / REINICIAR
   // -------------------------------------------------------------------
   async function exportarTodo() {
-    const [productos, ventas, ingresos, meta, configuracion, mensaje] = await Promise.all([
-      listProductos(), listVentas(), listIngresos(), getMetaActiva(), getConfiguracion(), getMensaje()
+    const [productos, ventas, ingresos, meta, configuracion, mensaje, insumos] = await Promise.all([
+      listProductos(), listVentas(), listIngresos(), getMetaActiva(), getConfiguracion(), getMensaje(), listInsumos()
     ]);
+    const recetas = await getRecetas(productos.map((p) => p.id));
     return {
-      version: 1,
+      version: 2,
       exportado_en: new Date().toISOString(),
       campana_id: campanaId,
-      productos, ventas, ingresos_extras: ingresos, meta, configuracion, mensaje
+      productos, ventas, ingresos_extras: ingresos, meta, configuracion, mensaje,
+      insumos,
+      producto_insumos: recetas.map((r) => ({ producto_id: r.producto_id, insumo_id: r.insumo_id, cantidad: r.cantidad }))
     };
   }
 
@@ -328,6 +432,7 @@ const Api = (() => {
       await sb.from('ventas').delete().eq('campana_id', campanaId);
       await sb.from('ingresos_extras').delete().eq('campana_id', campanaId);
       await sb.from('productos').delete().eq('campana_id', campanaId);
+      await sb.from('insumos').delete().eq('campana_id', campanaId);
     }
 
     const mapaProductos = new Map();
@@ -340,6 +445,30 @@ const Api = (() => {
         mapaProductos.set(p.id, creado.id);
       }
     }
+
+    const mapaInsumos = new Map();
+    if (Array.isArray(backup.insumos)) {
+      for (const i of backup.insumos) {
+        const creado = await createInsumo({
+          nombre: i.nombre, unidad_medida: i.unidad_medida, notas: i.notas, activo: i.activo, orden: i.orden
+        });
+        mapaInsumos.set(i.id, creado.id);
+      }
+    }
+    if (Array.isArray(backup.producto_insumos)) {
+      const porProducto = new Map();
+      for (const r of backup.producto_insumos) {
+        const nuevoProductoId = mapaProductos.get(r.producto_id);
+        const nuevoInsumoId = mapaInsumos.get(r.insumo_id);
+        if (!nuevoProductoId || !nuevoInsumoId) continue; // referencia rota en el backup, se omite
+        if (!porProducto.has(nuevoProductoId)) porProducto.set(nuevoProductoId, []);
+        porProducto.get(nuevoProductoId).push({ insumo_id: nuevoInsumoId, cantidad: r.cantidad });
+      }
+      for (const [productoId, items] of porProducto) {
+        await setRecetaProducto(productoId, items);
+      }
+    }
+
     if (Array.isArray(backup.ventas)) {
       for (const v of backup.ventas) {
         await createVenta({
@@ -377,6 +506,7 @@ const Api = (() => {
     await sb.from('ingresos_extras').delete().eq('campana_id', campanaId);
     if (!mantenerProductos) {
       await sb.from('productos').delete().eq('campana_id', campanaId);
+      await sb.from('insumos').delete().eq('campana_id', campanaId);
     }
   }
 
@@ -385,6 +515,9 @@ const Api = (() => {
     get campanaId() { return campanaId; },
     // productos
     listProductos, getProducto, createProducto, updateProducto, deleteProducto, duplicarProducto,
+    // insumos y recetas
+    listInsumos, getInsumo, createInsumo, updateInsumo, deleteInsumo, duplicarInsumo,
+    getRecetaProducto, getRecetas, setRecetaProducto,
     // ventas
     listVentas, getVenta, createVenta, updateVenta, deleteVenta, duplicarVenta, cambiarEstadoVenta,
     // ingresos

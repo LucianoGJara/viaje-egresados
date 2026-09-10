@@ -85,6 +85,34 @@ const Stats = (() => {
     return Object.values(grupos).sort((a, b) => a.key.localeCompare(b.key));
   }
 
+  // Consolida, a partir de las ventas y la receta (producto_insumos) de cada
+  // combo, cuánto de cada insumo hace falta comprar/producir en total.
+  // No es un control de stock: es una "explosión de receta" calculada en
+  // vivo sobre TODAS las ventas registradas (pagadas + pendientes), porque
+  // lo que ya se vendió hay que producirlo igual, se haya cobrado o no.
+  function calcularInsumosNecesarios(ventas, recetas) {
+    const recetaPorProducto = {};
+    recetas.forEach((r) => {
+      if (!recetaPorProducto[r.producto_id]) recetaPorProducto[r.producto_id] = [];
+      recetaPorProducto[r.producto_id].push(r);
+    });
+
+    const acumulado = {};
+    ventas.forEach((v) => {
+      const items = recetaPorProducto[v.producto_id];
+      if (!items) return;
+      items.forEach((it) => {
+        if (!it.insumo) return; // por seguridad si el insumo ya no existe
+        if (!acumulado[it.insumo_id]) acumulado[it.insumo_id] = { insumo: it.insumo, cantidad: 0 };
+        acumulado[it.insumo_id].cantidad += Number(it.cantidad) * (Number(v.cantidad) || 0);
+      });
+    });
+
+    return Object.values(acumulado)
+      .map((x) => ({ insumo: x.insumo, cantidadNecesaria: Utils.round2(x.cantidad) }))
+      .sort((a, b) => b.cantidadNecesaria - a.cantidadNecesaria);
+  }
+
   // Proyección: cuántas unidades faltan vender de cada producto para llegar a la meta,
   // asumiendo (hipotéticamente) que TODO lo faltante se cubre solo con ese producto.
   function proyeccion(productos, dineroFaltante) {
@@ -96,5 +124,5 @@ const Stats = (() => {
       }));
   }
 
-  return { compute, agruparPorFecha, proyeccion, sum };
+  return { compute, agruparPorFecha, proyeccion, calcularInsumosNecesarios, sum };
 })();

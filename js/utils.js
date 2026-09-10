@@ -157,9 +157,36 @@ const Utils = (() => {
     });
   }
 
+  // Carga un <script src="..."> una sola vez (usado para librerías pesadas
+  // que solo hacen falta al exportar Excel/PDF: SheetJS, jsPDF).
+  const scriptsCargados = new Set();
+  function loadScript(src) {
+    if (scriptsCargados.has(src)) return Promise.resolve();
+    return new Promise((resolve, reject) => {
+      const s = document.createElement('script');
+      s.src = src;
+      s.onload = () => { scriptsCargados.add(src); resolve(); };
+      s.onerror = () => reject(new Error(`No se pudo cargar ${src}`));
+      document.head.appendChild(s);
+    });
+  }
+
+  // Dispara la descarga de un Blob con un nombre de archivo dado.
+  function descargarBlob(blob, filename) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+  }
+
   return {
     formatMoney, formatNumber, formatPercent, formatDate, formatDateTime, timeAgo,
     todayISO, calcularGanancia, calcularRentabilidad, calcularPrecioDesdePorcentaje,
-    round2, clamp, uuid, debounce, escapeHtml, toast, confirmDialog
+    round2, clamp, uuid, debounce, escapeHtml, toast, confirmDialog,
+    loadScript, descargarBlob
   };
 })();

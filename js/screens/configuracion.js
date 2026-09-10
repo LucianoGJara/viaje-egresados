@@ -8,31 +8,12 @@
  * "Importar JSON" y "Restaurar respaldo".
  */
 
-window.ScreenConfiguracion = (() => {
+const ScreenConfiguracion = (() => {
   const COLOR_PRESETS = ['#4F46E5', '#7C3AED', '#2563EB', '#0EA5E9', '#10B981', '#F59E0B', '#EF4444', '#EC4899'];
-  const loadedScripts = new Set();
-
-  function loadScript(src) {
-    if (loadedScripts.has(src)) return Promise.resolve();
-    return new Promise((resolve, reject) => {
-      const s = document.createElement('script');
-      s.src = src;
-      s.onload = () => { loadedScripts.add(src); resolve(); };
-      s.onerror = () => reject(new Error(`No se pudo cargar ${src}`));
-      document.head.appendChild(s);
-    });
-  }
-
-  function descargarBlob(blob, filename) {
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 2000);
-  }
+  // loadScript/descargarBlob viven en utils.js (Utils.loadScript / Utils.descargarBlob)
+  // porque screens/insumos.js también los necesita para sus exportaciones.
+  const loadScript = Utils.loadScript;
+  const descargarBlob = Utils.descargarBlob;
 
   function fechaArchivo() {
     return Utils.todayISO();
@@ -529,3 +510,5 @@ window.ScreenConfiguracion = (() => {
 
   return { render };
 })();
+
+window.ScreenConfiguracion = ScreenConfiguracion;

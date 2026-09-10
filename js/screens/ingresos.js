@@ -2,7 +2,7 @@
  * screens/ingresos.js — Ingresos extras (dinero que no proviene de ventas).
  */
 
-window.ScreenIngresos = (() => {
+const ScreenIngresos = (() => {
   const TIPOS = {
     donacion: { label: 'Donación', emoji: '🎁' },
     rifa: { label: 'Rifa', emoji: '🎟️' },
@@ -164,3 +164,5 @@ window.ScreenIngresos = (() => {
 
   return { render };
 })();
+
+window.ScreenIngresos = ScreenIngresos;

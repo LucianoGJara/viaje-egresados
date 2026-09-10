@@ -2,7 +2,7 @@
  * screens/ventas.js — Listado, búsqueda, filtros y acciones sobre ventas.
  */
 
-window.ScreenVentas = (() => {
+const ScreenVentas = (() => {
   let productosCache = [];
   let filtros = { busqueda: '', productoId: '', estado: '', desde: '', hasta: '' };
   let filtrosAbiertos = false;
@@ -316,3 +316,5 @@ window.ScreenVentas = (() => {
 
   return { render };
 })();
+
+window.ScreenVentas = ScreenVentas;

@@ -2,7 +2,7 @@
  * screens/estadisticas.js — Métricas, rankings y gráficos.
  */
 
-window.ScreenEstadisticas = (() => {
+const ScreenEstadisticas = (() => {
   const PALETTE = ['#4F46E5', '#10B981', '#F59E0B', '#3B82F6', '#EF4444', '#8B5CF6', '#EC4899', '#14B8A6'];
   let granularidad = 'day';
   let ventasCache = [];
@@ -116,3 +116,5 @@ window.ScreenEstadisticas = (() => {
 
   return { render };
 })();
+
+window.ScreenEstadisticas = ScreenEstadisticas;

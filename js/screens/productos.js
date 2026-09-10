@@ -3,8 +3,8 @@
  * de ganancia y rentabilidad, y precio↔porcentaje bidireccional.
  */
 
-window.ScreenProductos = (() => {
-  function productCardHtml(p) {
+const ScreenProductos = (() => {
+  function productCardHtml(p, recetaCount) {
     return `
       <div class="product-card ${p.activo ? '' : 'is-inactive'}" data-id="${p.id}">
         <div class="product-card__header">
@@ -19,8 +19,9 @@ window.ScreenProductos = (() => {
           <div class="product-card__stat"><div class="product-card__stat-label">Precio</div><div class="product-card__stat-value">${Utils.formatMoney(p.precio_venta)}</div></div>
           <div class="product-card__stat"><div class="product-card__stat-label">Ganancia</div><div class="product-card__stat-value">${Utils.formatMoney(p.ganancia)}</div></div>
         </div>
-        <div class="mt-8 text-center">
+        <div class="mt-8 text-center flex gap-8" style="justify-content:center;">
           <span class="badge badge--info">Rentabilidad ${Utils.formatPercent(p.rentabilidad)}</span>
+          <span class="badge ${recetaCount ? 'badge--pagado' : 'badge--neutral'}">🧾 ${recetaCount ? `${recetaCount} insumo${recetaCount === 1 ? '' : 's'}` : 'Sin receta'}</span>
         </div>
         <div class="product-card__actions">
           <button class="btn btn--ghost btn--sm" data-accion="editar">✏️ Editar</button>
@@ -73,6 +74,15 @@ window.ScreenProductos = (() => {
           </label>
         </div>
 
+        <div class="section-title" style="margin-top:22px;">
+          🧾 Insumos utilizados
+          <span class="badge badge--info">para calcular necesidades de compra</span>
+        </div>
+        <p class="form-hint" style="margin-top:-4px;margin-bottom:10px;">Cuánto de cada insumo se usa para armar <strong>1 unidad</strong> de este combo.</p>
+        <div id="receta-rows"></div>
+        <div id="receta-empty" class="hidden"></div>
+        <button type="button" class="btn btn--ghost btn--sm mt-8" id="btn-agregar-insumo">➕ Agregar insumo</button>
+
         <div class="modal__footer">
           <button type="button" class="btn btn--ghost" id="btn-cancelar-producto">Cancelar</button>
           <button type="submit" class="btn btn--primary">${p ? 'Guardar cambios' : 'Crear producto'}</button>
@@ -81,7 +91,63 @@ window.ScreenProductos = (() => {
     `;
   }
 
-  function attachFormEvents(body, producto, onSaved) {
+  // ---------------------------------------------------------------------
+  // Editor de receta (insumos + cantidad por unidad de combo) embebido en
+  // el formulario de producto. Mantiene su propio estado en memoria y
+  // recién se guarda contra Supabase cuando se envía el formulario.
+  // ---------------------------------------------------------------------
+  function recetaRowHtml(item, index, insumosDisponibles) {
+    return `
+      <div class="input-row mt-8" data-receta-row="${index}">
+        <div class="select-wrap" style="flex:2;">
+          <select class="select receta-insumo-select" data-index="${index}">
+            ${insumosDisponibles.map((i) => `<option value="${i.id}" ${i.id === item.insumo_id ? 'selected' : ''}>${Utils.escapeHtml(i.nombre)} (${Utils.escapeHtml(i.unidad_medida)})</option>`).join('')}
+          </select>
+        </div>
+        <input class="input receta-cantidad-input" data-index="${index}" type="number" min="0" step="0.01" value="${item.cantidad}" style="flex:1;" placeholder="Cant.">
+        <button type="button" class="btn btn--ghost btn--icon receta-quitar-btn" data-index="${index}" title="Quitar" style="flex:0 0 auto;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>`;
+  }
+
+  function renderRecetaEditor(body, receta, insumosDisponibles) {
+    const rowsEl = body.querySelector('#receta-rows');
+    const emptyEl = body.querySelector('#receta-empty');
+    const btnAgregar = body.querySelector('#btn-agregar-insumo');
+
+    if (!insumosDisponibles.length) {
+      rowsEl.innerHTML = '';
+      emptyEl.classList.remove('hidden');
+      emptyEl.innerHTML = `
+        <p class="form-hint">Todavía no cargaste insumos. Creálos desde la pantalla <strong>Insumos</strong> y después volvé acá para armar la receta.</p>`;
+      btnAgregar.disabled = true;
+      return;
+    }
+    emptyEl.classList.add('hidden');
+    btnAgregar.disabled = false;
+
+    if (!receta.length) {
+      rowsEl.innerHTML = `<p class="text-secondary" style="font-size:12.5px;">Sin insumos cargados todavía para este combo.</p>`;
+      return;
+    }
+    rowsEl.innerHTML = receta.map((item, index) => recetaRowHtml(item, index, insumosDisponibles)).join('');
+
+    rowsEl.querySelectorAll('.receta-insumo-select').forEach((sel) => {
+      sel.addEventListener('change', () => { receta[Number(sel.dataset.index)].insumo_id = sel.value; });
+    });
+    rowsEl.querySelectorAll('.receta-cantidad-input').forEach((inp) => {
+      inp.addEventListener('input', () => { receta[Number(inp.dataset.index)].cantidad = inp.value; });
+    });
+    rowsEl.querySelectorAll('.receta-quitar-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        receta.splice(Number(btn.dataset.index), 1);
+        renderRecetaEditor(body, receta, insumosDisponibles);
+      });
+    });
+  }
+
+  function attachFormEvents(body, producto, recetaInicial, insumosDisponibles, onSaved) {
     const form = body.querySelector('#form-producto');
     const costoInput = form.costo;
     const precioInput = form.precio_venta;
@@ -120,6 +186,17 @@ window.ScreenProductos = (() => {
     pctInput.addEventListener('input', recalcularDesdePorcentaje);
     precioInput.addEventListener('input', recalcularDesdePrecio);
 
+    // Estado local de la receta: [{insumo_id, cantidad}]
+    const receta = recetaInicial.map((r) => ({ insumo_id: r.insumo_id, cantidad: r.cantidad }));
+    renderRecetaEditor(body, receta, insumosDisponibles);
+
+    body.querySelector('#btn-agregar-insumo').addEventListener('click', () => {
+      const yaUsados = new Set(receta.map((r) => r.insumo_id));
+      const siguiente = insumosDisponibles.find((i) => !yaUsados.has(i.id)) || insumosDisponibles[0];
+      receta.push({ insumo_id: siguiente.id, cantidad: 1 });
+      renderRecetaEditor(body, receta, insumosDisponibles);
+    });
+
     body.querySelector('#btn-cancelar-producto').addEventListener('click', () => AppModal.close());
 
     form.addEventListener('submit', async (e) => {
@@ -131,21 +208,39 @@ window.ScreenProductos = (() => {
         precio_venta: Number(precioInput.value) || 0,
         activo: form.activo.checked
       };
+      const btnSubmit = form.querySelector('button[type="submit"]');
+      btnSubmit.disabled = true;
       try {
-        if (producto) await Api.updateProducto(producto.id, payload);
-        else await Api.createProducto({ ...payload, orden: Date.now() });
+        const guardado = producto ? await Api.updateProducto(producto.id, payload) : await Api.createProducto({ ...payload, orden: Date.now() });
+        const recetaValida = receta.filter((r) => r.insumo_id && Number(r.cantidad) > 0);
+        await Api.setRecetaProducto(guardado.id, recetaValida);
         Utils.toast(producto ? 'Producto actualizado' : 'Producto creado', 'success');
         AppModal.close();
         onSaved();
       } catch (err) {
         Utils.toast(`Error: ${err.message}`, 'error');
+        btnSubmit.disabled = false;
       }
     });
   }
 
-  function abrirFormulario(producto, onSaved) {
+  async function abrirFormulario(producto, onSaved) {
     AppModal.open(producto ? 'Editar producto' : 'Nuevo producto', formHtml(producto), {
-      onMount: (body) => attachFormEvents(body, producto, onSaved)
+      onMount: async (body) => {
+        // Deshabilitamos el submit hasta tener insumos/receta cargados, para
+        // evitar guardar con el editor de receta todavía vacío por la carga.
+        const btnSubmit = body.querySelector('button[type="submit"]');
+        btnSubmit.disabled = true;
+        try {
+          const [insumosDisponibles, recetaInicial] = await Promise.all([
+            Api.listInsumos({ includeInactive: false }),
+            producto ? Api.getRecetaProducto(producto.id) : Promise.resolve([])
+          ]);
+          attachFormEvents(body, producto, recetaInicial, insumosDisponibles, onSaved);
+        } finally {
+          btnSubmit.disabled = false;
+        }
+      }
     });
   }
 
@@ -166,7 +261,11 @@ window.ScreenProductos = (() => {
           </div>`;
         return;
       }
-      listEl.innerHTML = productos.map(productCardHtml).join('');
+      const recetas = await Api.getRecetas(productos.map((p) => p.id));
+      const conteoPorProducto = {};
+      recetas.forEach((r) => { conteoPorProducto[r.producto_id] = (conteoPorProducto[r.producto_id] || 0) + 1; });
+
+      listEl.innerHTML = productos.map((p) => productCardHtml(p, conteoPorProducto[p.id] || 0)).join('');
       listEl.querySelectorAll('.product-card').forEach((card) => {
         const id = card.dataset.id;
         const producto = productos.find((p) => p.id === id);
@@ -202,3 +301,5 @@ window.ScreenProductos = (() => {
 
   return { render };
 })();
+
+window.ScreenProductos = ScreenProductos;

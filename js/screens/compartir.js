@@ -2,7 +2,7 @@
  * screens/compartir.js — Editor del mensaje para compartir la campaña.
  */
 
-window.ScreenCompartir = (() => {
+const ScreenCompartir = (() => {
   let mensajeActual = null;
 
   function copiarAlPortapapeles(texto) {
@@ -124,3 +124,5 @@ window.ScreenCompartir = (() => {
 
   return { render };
 })();
+
+window.ScreenCompartir = ScreenCompartir;
